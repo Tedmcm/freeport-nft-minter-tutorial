@@ -1,9 +1,16 @@
-import { React, useEffect, useState, useContext } from "react";
+import { React, useEffect, useState, useContext, Fragment } from "react";
 import { connectWallet, getCurrentWalletConnected, mintNFT, upload2DDC, downloadFromDDC, attachNftToCid } from "./actions.js";
 
 import { get as httpGet, post as httpPost } from "axios";
 import LocalStorage from "local-storage";
+
 import Button from 'react-bootstrap/Button';
+import Card from 'react-bootstrap/Card';
+import Stack from 'react-bootstrap/Stack';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+
 import { importProvider, } from "@cere/freeport-sdk";
 import {
     utilProvider2Ethereum,
@@ -91,7 +98,7 @@ const Main = (props) => {
   }
 
   const onDownloadPressed = async () => {
-    const { status, content} = await downloadFromDDC(cid);
+    const { status, content} = await downloadFromDDC(PROXY_SERVER, sessionToken, provider, minter, cid);
     setStatus(status);
     setDownloadedImage(URL.createObjectURL(content));
   };
@@ -161,71 +168,110 @@ const Main = (props) => {
 
 
   const AuthenticatedView = () => (
-    <div>
-      <MetamaskLogout address={minter} logout={logout}/>
-      <h2> Upload your content to DDC </h2>
-      <div>
-        <form className="form" id="myform">
-        Main image: 
-      <img alt="main image" src={previewMain} style={{width: "200px"}}></img>
-        <input name="file" type="file" id="inpFile"  onChange={(event) => { setUploadData(event.target.files[0]); setPreviewMain(URL.createObjectURL(event.target.files[0])); }}></input>
-        Preview image:
-      <img alt="preview image" src={preview} style={{width: "200px"}}></img>
-         <input name="preview" type="file" id="previewFile" onChange={(event) => {setPreviewData(event.target.files[0]); setPreview(URL.createObjectURL(event.target.files[0])); }}></input>
-        </form>
-      </div>
-      &nbsp;
-      <input type="text" placeholder="Give your content a title." value={uploadDataTitle} onChange={(event) => setUploadDataTitle(event.target.value)}/>
-      &nbsp;
-      <input type="text" placeholder="Give your content a description." value={uploadDataDescription} onChange={(event) => setUploadDataDescription(event.target.value)}/>
-      <button id="actionButton" onClick={onUploadPressed}> Upload </button>      
+    <Container fluid="md" bg="dark">
+      <Row>
+        <MetamaskLogout address={minter} logout={logout}/>
+      </Row>
+      <Row lg={2} md="auto" className="g-4">
+      <Col >
+        <Card  bg="dark" border="secondary">
+          <Card.Body>
+            <Card.Title style={{color: "white"}}>Upload</Card.Title>
+            <Card.Subtitle className="mb-2 text-muted">Upload your content to DDC </Card.Subtitle>
+            <div>
+              <form className="form" id="myform">
+              Main image: 
+            <img alt="main image" src={previewMain} style={{width: "200px"}}></img>
+              <input name="file" type="file" id="inpFile"  onChange={(event) => { setUploadData(event.target.files[0]); setPreviewMain(URL.createObjectURL(event.target.files[0])); }}></input>
+              Preview image:
+            <img alt="preview image" src={preview} style={{width: "200px"}}></img>
+               <input name="preview" type="file" id="previewFile" onChange={(event) => {setPreviewData(event.target.files[0]); setPreview(URL.createObjectURL(event.target.files[0])); }}></input>
+              </form>
+            </div>
 
-      <h2> Verify that your content was uploaded by downloading it from DDC </h2>
-      <input type="text" placeholder="Enter content ID returned from upload step." onChange={(event) => setCid(event.target.value)}/>
-      <button id="actionButton" onClick={onDownloadPressed}> Download </button>      
-
-      <input type="number" placeholder="Enter the number of copies to mint." value={qty} onChange={(event) => setQty(event.target.value)}/>
-      <button id="actionButton" onClick={onMintPressed}> Mint NFT</button>      
-
-      <br></br><br></br>
-      <h2> Attach NFT to CID </h2>
-      <input type="text" placeholder="Enter your NFT id." onChange={(event) => setNftId(event.target.value)}/>
-      &nbsp;
-      <input type="text" placeholder="Enter your content id." onChange={(event) => setCid(event.target.value)}/>
-      <button id="actionButton" onClick={onAttachPressed}> Attach</button>      
-    </div>
+            <input type="text" placeholder="Give your content a title." value={uploadDataTitle} onChange={(event) => setUploadDataTitle(event.target.value)}/>
+            <input type="text" placeholder="Give your content a description." value={uploadDataDescription} onChange={(event) => setUploadDataDescription(event.target.value)}/>
+            <Button id="actionButton" onClick={onUploadPressed}> Upload </Button>      
+          </Card.Body>
+        </Card>
+      </Col>
+      <Col>
+        <Card  bg="dark" border="secondary">
+          <Card.Body>
+            <Card.Title style={{color: "white"}}>Download </Card.Title>
+            <Card.Subtitle className="mb-2 text-muted">Verify that your content was uploaded by downloading it from DDC</Card.Subtitle>
+            <h2>  </h2>
+            <input type="text" placeholder="Enter content ID returned from upload step." onChange={(event) => setCid(event.target.value)}/>
+            <Button id="actionButton" onClick={onDownloadPressed}> Download </Button>      
+            <p id="output"> Downloaded image: </p>
+            {downloadedImage ? <img src={downloadedImage} style={{width: "200px"}}></img>: null}
+          </Card.Body>
+        </Card>
+      </Col>
+      <Col>
+        <Card  bg="dark" border="secondary">
+          <Card.Body>
+            <Card.Title style={{color: "white"}}>Mint</Card.Title>
+            <Card.Subtitle className="mb-2 text-muted">Create your NFT (ERC 1155) on Polygon</Card.Subtitle>
+            <input type="number" placeholder="Enter the number of copies to mint." value={qty} onChange={(event) => setQty(event.target.value)}/>
+            <Button id="actionButton" onClick={onMintPressed}> Mint NFT</Button>      
+          </Card.Body>
+        </Card>
+      </Col>
+      <Col>
+        <Card  bg="dark" border="secondary">
+          <Card.Body>
+            <Card.Title style={{color: "white"}}>Attach</Card.Title>
+            <Card.Subtitle className="mb-2 text-muted">Attach NFT to CID</Card.Subtitle>
+            <input type="text" placeholder="Enter your NFT id." onChange={(event) => setNftId(event.target.value)}/>
+            <input type="text" placeholder="Enter your content id." onChange={(event) => setCid(event.target.value)}/>
+            <Button id="actionButton" onClick={onAttachPressed}> Attach</Button>      
+          </Card.Body>
+        </Card>
+      </Col>
+    </Row>
+    </Container>
     );
 
 
   return (   
-    <div className="Main">
+    <div style={{backgroundColor:"black"}}>
       <button id="walletButton" onClick={connectWalletPressed}>
         {walletAddress.length > 0 ? ("Connected: " + String(walletAddress).substring(0, 6) + "..." + String(walletAddress).substring(38)) : (<span>Connect Wallet</span>)}
       </button>
-      <h1 id="title"> Create an NFT with Cere Freeport and DDC </h1>
 
-      <div className="header">
-        <h3>Status message:</h3>
-      <p id="status"> {status} </p>
-      </div>
+      { sessionToken && 
+      <Fragment>
+      <h1 style={{color:"white"}}> Create an NFT with Cere Freeport and DDC </h1>
 
-      <div className="header2">
-        <h3>Outputs:</h3>
-      <p id="output"> {uploadOutput} </p>
-      <p id="output"> Downloaded image: </p>
-      {downloadedImage ? <img src={downloadedImage} style={{width: "200px"}}></img>: null}
-      <p id="output"> {mintOutput} </p>
-      <p id="output"> {attachOutput} </p>
-      </div>
-      <button id="actionButton" onClick={onClearOutputPressed}>Clear output</button>      
+      {/*
+      <Container fluid="md">
+        <Row>
+        <Card  bg="dark" border="secondary">
+          <Card.Body>
+            <Card.Title style={{color: "white"}}>Status</Card.Title>
+            <Card.Subtitle className="mb-2 text-muted">Output Messages</Card.Subtitle>
+
+            <div className="header">
+              <h3>Status message:</h3>
+              <p id="status"> {status} </p>
+            </div>
+
+            <div className="header2">
+              <h3>Outputs:</h3>
+              <div> {uploadOutput} </div>
+              <div> {mintOutput} </div>
+              <div> {attachOutput} </div>
+            </div>
+          <Button id="actionButton" onClick={onClearOutputPressed}>Clear output</Button>   
+          </Card.Body>
+        </Card>
+        </Row>
+      </Container>
+    */}
+      </Fragment>
+      }
       
-      <h2> Login using Metamask </h2>
-      <p>
-      Logging in with Metamask allows you to setup a session with the DDC Gateway
-      to minimize wallet (e.g. metamask) interactions.  The Gateway caches the encryption key
-      and significantly improves usability when you upload files multiple times (e.g. drag and 
-      drop scenarios)
-      </p>
       { sessionToken ? AuthenticatedView() : MetamaskLogin({url: PROXY_SERVER, login: login})
       } 
 
@@ -236,12 +282,23 @@ const Main = (props) => {
 
 
 const MetamaskLogin = ({login}) => (
-    <Button onClick={login}> Login with Metamask </Button>
+      <Card bg="dark" border="secondary">
+        <Card.Body>
+          <Card.Title>Login</Card.Title>
+          <Card.Subtitle className="mb-2 text-muted">Login with Metamask</Card.Subtitle>
+          <Card.Text bg="dark" style={{color: "lightgray"}}>
+            Logging in with Metamask allows you to setup a session with the DDC Gateway to minimize wallet 
+            (e.g. metamask) interactions. The Gateway caches the encryption key and significantly improves 
+            usability when you upload files multiple times (e.g. drag and drop scenarios)
+          </Card.Text>  
+          <Button onClick={login}> Login </Button>
+        </Card.Body>
+      </Card>
 );
 const MetamaskLogout = ({logout, address}) => (
-    <div>
-      <Button variant="primary" onClick={logout}> Logout </Button>
-    </div>
+    <Container>
+      <Button id="actionButton" variant="primary" onClick={logout}> Logout </Button>
+    </Container>
 );
 
 // Authorize
