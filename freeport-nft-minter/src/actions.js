@@ -33,7 +33,59 @@ export const getCurrentWalletConnected = async () => {
   } else { return { address: "", status: "Please install the metamask wallet" }; }
 };
 
-export const upload2DDC = async (data, title, description) => {
+
+
+// Assumes Metamask or some other web3 wallet extension
+// Assumes browser environment
+export const upload2DDC = async (url, sessionToken, minter, minterEncryptionKey, data, preview, title, description) => {
+    const uploadData = {
+        minter, // Owner address
+        file: data, // binary file
+        preview,
+        minterEncryptionKey, // Minter encryption key
+        title, // Asset title
+        description //Descriptive text
+    };
+    const uploadUrl = `${url}/assets/v2`;
+    try {
+      const httpRes = await upload(uploadUrl, uploadData, sessionToken);
+      const contentId = httpRes.data;
+      return {contentId, previewUrl: `${url}/assets/v2/${minter}/${contentId}/preview`, status: ""};
+    } catch (err) {
+      return {contentId: undefined, status: "Upload failed: "+err}
+    }
+};
+
+// Post HTTP request, parse response and return uploadId
+const upload = async (url, data, jwt) => {
+  let fdata = new FormData();
+  fdata.append('asset', new File(
+    [data.file],
+    "my-ddc-file.txt", {type: "text/plain",}
+    ));
+  fdata.append('preview', new File(
+    [data.preview],
+    "my-ddc-file.txt", {type: "text/plain",}
+    ));
+  fdata.append('contentType', 'text/plain')
+  fdata.append('description', data.description);
+  fdata.append('title', data.title);
+
+  return httpPost(
+    url,
+    fdata,
+    {
+      headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${jwt}`
+      }
+  });
+}
+
+
+
+
+export const upload2DDC0 = async (data, title, description) => {
     // Get the wallets that are connected to metamask
     const accounts = await window.ethereum.request({ method: "eth_accounts" });
     // Get the user's wallet address
@@ -161,3 +213,9 @@ export const utilStr2ByteArr = (str) => {
     }
     return arr;
 }
+
+const getPreviewUrl = async (baseUrl, minter, cid, jwt) => {
+  const result = await httpGet(`${baseUrl}/assets/v2/${minter}/${cid}/preview`);
+    console.log("Preview result", result);
+  return result.data;
+};
