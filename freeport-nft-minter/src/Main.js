@@ -44,6 +44,7 @@ const Main = (props) => {
   // State variables - Statuses
   const [status, setStatus] = useState("");
   const [uploadOutput, setUploadOutput] = useState("Content ID:");
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [mintOutput, setMintOutput] = useState("NFT ID:");
   const [attachOutput, setAttachOutput] = useState("Attachment transaction link:");
 
@@ -94,6 +95,7 @@ const Main = (props) => {
         uploadDataTitle, 
         uploadDataDescription);
     setStatus(status);
+    setPreviewUrl(previewUrl);
     setUploadOutput("Content ID: " + contentId);
   }
 
@@ -180,18 +182,19 @@ const Main = (props) => {
             <Card.Subtitle className="mb-2 text-muted">Upload your content to DDC </Card.Subtitle>
             <div>
               <form className="form" id="myform">
-              Main image: 
-            <img alt="main image" src={previewMain} style={{width: "200px"}}></img>
+              <div> Main image: </div> 
+              <img alt="main image" src={previewMain} style={{width: "200px"}}></img>
               <input name="file" type="file" id="inpFile"  onChange={(event) => { setUploadData(event.target.files[0]); setPreviewMain(URL.createObjectURL(event.target.files[0])); }}></input>
               Preview image:
-            <img alt="preview image" src={preview} style={{width: "200px"}}></img>
+                <img alt="preview image" src={preview} style={{width: "200px"}}></img>
                <input name="preview" type="file" id="previewFile" onChange={(event) => {setPreviewData(event.target.files[0]); setPreview(URL.createObjectURL(event.target.files[0])); }}></input>
               </form>
             </div>
 
             <input type="text" placeholder="Give your content a title." value={uploadDataTitle} onChange={(event) => setUploadDataTitle(event.target.value)}/>
             <input type="text" placeholder="Give your content a description." value={uploadDataDescription} onChange={(event) => setUploadDataDescription(event.target.value)}/>
-            <Button id="actionButton" onClick={onUploadPressed}> Upload </Button>      
+            <Button id="actionButton" onClick={onUploadPressed}> Upload </Button>
+            <div> { previewUrl && <a href={previewUrl}> Preview Link </a> } </div>      
           </Card.Body>
         </Card>
       </Col>
