@@ -25,7 +25,7 @@ code {
 }
 
 
-input {
+/*input {
   border-top-style: hidden;
   border-right-style: hidden;
   border-left-style: hidden;
@@ -43,7 +43,7 @@ input:focus {
   outline: none;
   border-color: #FFFFFF;
 }
-
+*/
 
 button {
   padding: 9px 16px;

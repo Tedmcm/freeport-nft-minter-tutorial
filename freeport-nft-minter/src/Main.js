@@ -86,6 +86,7 @@ const Main = (props) => {
   }, []);
 
   const onUploadPressed = async () => {
+    setCid(null);
     const { contentId, previewUrl, status } = await upload2DDC(PROXY_SERVER, 
         sessionToken, 
         minter, 
@@ -96,10 +97,12 @@ const Main = (props) => {
         uploadDataDescription);
     setStatus(status);
     setPreviewUrl(previewUrl);
+    setCid(contentId);
     setUploadOutput("Content ID: " + contentId);
   }
 
   const onDownloadPressed = async () => {
+    setDownloadedImage(null);
     const { status, content} = await downloadFromDDC(PROXY_SERVER, sessionToken, provider, minter, cid);
     setStatus(status);
     setDownloadedImage(URL.createObjectURL(content));
@@ -171,65 +174,187 @@ const Main = (props) => {
 
   const AuthenticatedView = () => (
     <Container fluid="md" bg="dark">
-      <Row>
-        <MetamaskLogout address={minter} logout={logout}/>
+      <Row >
+        <Col className="col-10"/>
+        <Col>
+          <MetamaskLogout address={minter} logout={logout}/>
+        </Col>
       </Row>
       <Row lg={2} md="auto" className="g-4">
       <Col >
-        <Card  bg="dark" border="secondary">
+        <Card  bg="secondary" border="secondary" text="light">
+          <Card.Header >
+              <Card.Title>Upload</Card.Title>
+              <Card.Subtitle className="mb-2">Upload your content to DDC </Card.Subtitle>
+          </Card.Header>
           <Card.Body>
-            <Card.Title style={{color: "white"}}>Upload</Card.Title>
-            <Card.Subtitle className="mb-2 text-muted">Upload your content to DDC </Card.Subtitle>
-            <div>
               <form className="form" id="myform">
-              <div> Main image: </div> 
-              <img alt="main image" src={previewMain} style={{width: "200px"}}></img>
-              <input name="file" type="file" id="inpFile"  onChange={(event) => { setUploadData(event.target.files[0]); setPreviewMain(URL.createObjectURL(event.target.files[0])); }}></input>
-              Preview image:
-                <img alt="preview image" src={preview} style={{width: "200px"}}></img>
-               <input name="preview" type="file" id="previewFile" onChange={(event) => {setPreviewData(event.target.files[0]); setPreview(URL.createObjectURL(event.target.files[0])); }}></input>
-              </form>
-            </div>
+              <Container>
+                <Row lg={3} md={3}> 
+                  <Col >Main image: </Col>
+                  <Col>
+                   <input name="file" type="file" onChange={(event) => { setUploadData(event.target.files[0]); setPreviewMain(URL.createObjectURL(event.target.files[0])); }}></input>
+                  </Col>
+                  <Col>{ previewMain && <img alt="main image" src={previewMain} style={{width: "32px"}}></img>}</Col>
+                </Row> 
 
-            <input type="text" placeholder="Give your content a title." value={uploadDataTitle} onChange={(event) => setUploadDataTitle(event.target.value)}/>
-            <input type="text" placeholder="Give your content a description." value={uploadDataDescription} onChange={(event) => setUploadDataDescription(event.target.value)}/>
-            <Button id="actionButton" onClick={onUploadPressed}> Upload </Button>
-            <div> { previewUrl && <a href={previewUrl}> Preview Link </a> } </div>      
+                <Row lg={3} md={3}> 
+                  <Col >Preview image: </Col>
+                  <Col>
+                   <input name="preview" type="file" onChange={(event) => {setPreviewData(event.target.files[0]); setPreview(URL.createObjectURL(event.target.files[0])); }}></input>
+                  </Col>
+                  <Col>{ previewMain && 
+                    <img alt="preview image" src={preview} style={{width: "32px"}}></img>
+                  }</Col>
+                </Row> 
+                <Row lg={3} md={3}> 
+                  <Col >
+                  <span >Title:</span>
+                  </Col>
+                  <Col>
+                    <input type="text" placeholder="Content title" value={uploadDataTitle} onChange={(event) => setUploadDataTitle(event.target.value)}/>
+                  </Col>
+                </Row> 
+                <Row lg={3} md={3}> 
+                  <Col >
+                   <span >Description:</span>
+                  </Col>
+                  <Col>
+                    <input type="text" placeholder="Content description" value={uploadDataDescription} onChange={(event) => setUploadDataDescription(event.target.value)}/>
+                  </Col>
+                </Row> 
+                <Row lg={3} md={3}> 
+                  <Col>
+                  </Col>
+                  <Col>
+                      <Button id="actionButton" onClick={onUploadPressed}> Upload </Button>
+                  </Col>
+                  <Col>
+                  </Col>
+                </Row>
+              </Container>
+              </form>
+
           </Card.Body>
+          <Card.Footer>
+            { cid && <Container>
+              <Row > 
+                <Col >
+                  Content ID:
+                </Col>
+                <Col >
+                  {cid}
+                </Col>
+              </Row>
+              <Row > 
+                <Col>
+                  <a href={previewUrl}> Preview Link </a>     
+                </Col>
+              </Row>
+            </Container>}
+          </Card.Footer>          
         </Card>
       </Col>
       <Col>
-        <Card  bg="dark" border="secondary">
+        <Card  bg="secondary" border="secondary" text="light">
+          <Card.Header >
+            <Card.Title >Download </Card.Title>
+            <Card.Subtitle className="mb-2">Verify that your content was uploaded by downloading it from DDC</Card.Subtitle>
+          </Card.Header >
           <Card.Body>
-            <Card.Title style={{color: "white"}}>Download </Card.Title>
-            <Card.Subtitle className="mb-2 text-muted">Verify that your content was uploaded by downloading it from DDC</Card.Subtitle>
-            <h2>  </h2>
-            <input type="text" placeholder="Enter content ID returned from upload step." onChange={(event) => setCid(event.target.value)}/>
-            <Button id="actionButton" onClick={onDownloadPressed}> Download </Button>      
-            <p id="output"> Downloaded image: </p>
-            {downloadedImage ? <img src={downloadedImage} style={{width: "200px"}}></img>: null}
+            <Container>
+              <Row> 
+                <Col>
+                  Content ID:
+                </Col>  
+                <Col >
+                  <input type="text" placeholder="Content ID from upload step." onChange={(event) => setCid(event.target.value)}/>
+                </Col>
+              </Row>  
+
+              <Row > 
+                <Col >
+                  <Button id="actionButton" onClick={onDownloadPressed}> Download </Button>      
+                </Col>
+              </Row>  
+            </Container>
           </Card.Body>
+
+          <Card.Footer>
+              {downloadedImage && <Container>
+              <Row lg={2} md={2}> 
+                <Col >
+                  Downloaded image:
+                </Col>  
+                <Col >
+                   <img src={downloadedImage} style={{width: "64px"}}></img>
+                </Col>
+              </Row>  
+              </Container>}
+          </Card.Footer>
+
         </Card>
       </Col>
       <Col>
-        <Card  bg="dark" border="secondary">
-          <Card.Body>
+        <Card  bg="secondary" border="secondary" text="light">
+          <Card.Header >
             <Card.Title style={{color: "white"}}>Mint</Card.Title>
-            <Card.Subtitle className="mb-2 text-muted">Create your NFT (ERC 1155) on Polygon</Card.Subtitle>
-            <input type="number" placeholder="Enter the number of copies to mint." value={qty} onChange={(event) => setQty(event.target.value)}/>
-            <Button id="actionButton" onClick={onMintPressed}> Mint NFT</Button>      
+            <Card.Subtitle className="mb-2">Create your NFT (ERC 1155) on Polygon</Card.Subtitle>
+          </Card.Header >
+          <Card.Body>
+            <Container>
+              <Row>
+                <Col> Supply:
+                </Col>
+                <Col>
+                  <input type="number" placeholder="Number of copies to mint" value={qty} onChange={(event) => setQty(event.target.value)}/>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Button id="actionButton" onClick={onMintPressed}> Mint NFT</Button>      
+                </Col>
+              </Row>
+            </Container>    
           </Card.Body>
+          <Card.Footer>
+          </Card.Footer>
         </Card>
       </Col>
       <Col>
-        <Card  bg="dark" border="secondary">
-          <Card.Body>
+        <Card  bg="secondary" border="secondary" text="light">
+          <Card.Header >
             <Card.Title style={{color: "white"}}>Attach</Card.Title>
-            <Card.Subtitle className="mb-2 text-muted">Attach NFT to CID</Card.Subtitle>
-            <input type="text" placeholder="Enter your NFT id." onChange={(event) => setNftId(event.target.value)}/>
-            <input type="text" placeholder="Enter your content id." onChange={(event) => setCid(event.target.value)}/>
-            <Button id="actionButton" onClick={onAttachPressed}> Attach</Button>      
+            <Card.Subtitle className="mb-2">Attach NFT to CID</Card.Subtitle>
+          </Card.Header >
+          <Card.Body>
+            <Container>
+              <Row>
+                <Col> NFT ID:
+                </Col>
+                <Col>
+                  <input type="text" placeholder="NFT ID" onChange={(event) => setNftId(event.target.value)}/>
+                </Col>
+              </Row>
+              <Row>
+                <Col> Content ID:
+                </Col>
+                <Col>
+                  <input type="text" placeholder="Content ID" onChange={(event) => setCid(event.target.value)}/>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Button id="actionButton" onClick={onAttachPressed}> Attach</Button>      
+                </Col>
+              </Row>
+            </Container>    
+
+
+
           </Card.Body>
+          <Card.Footer>
+          </Card.Footer>
         </Card>
       </Col>
     </Row>
@@ -300,7 +425,7 @@ const MetamaskLogin = ({login}) => (
 );
 const MetamaskLogout = ({logout, address}) => (
     <Container>
-      <Button id="actionButton" variant="primary" onClick={logout}> Logout </Button>
+      <Button variant="outline-secondary" onClick={logout}> Logout </Button>
     </Container>
 );
 
@@ -324,3 +449,24 @@ const getNonce = async (minter, baseUrl) => {
 
 
 export default Main;
+
+
+const Demo = ({variant, idx}) => (
+
+  <Card
+    bg={variant.toLowerCase()}
+    key={idx}
+    text={variant.toLowerCase() === 'light' ? 'dark' : 'white'}
+    style={{ width: '18rem' }}
+    className="mb-2"
+  >
+    <Card.Header>Header</Card.Header>
+    <Card.Body>
+      <Card.Title>{variant} Card Title </Card.Title>
+      <Card.Text>
+        Some quick example text to build on the card title and make up the bulk
+        of the card's content.
+      </Card.Text>
+    </Card.Body>
+  </Card>
+);
