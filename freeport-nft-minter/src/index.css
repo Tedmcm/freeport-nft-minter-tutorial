@@ -25,24 +25,24 @@ code {
 }
 
 
-/*input {
-  border-top-style: hidden;
-  border-right-style: hidden;
-  border-left-style: hidden;
-  border-bottom-style: groove;
-  font-size: 16px;
-  width: 100%;
-  background-color: #161D30;
-  line-height: 32px;
-  border-color: #FFFFFF;
-  font-family: 'Sora';
-  color: #FFFFFF;
-}
+  /*input {
+    border-top-style: hidden;
+    border-right-style: hidden;
+    border-left-style: hidden;
+    border-bottom-style: groove;
+    font-size: 16px;
+    width: 100%;
+    background-color: #161D30;
+    line-height: 32px;
+    border-color: #FFFFFF;
+    font-family: 'Sora';
+    color: #FFFFFF;
+  }
 
-input:focus {
-  outline: none;
-  border-color: #FFFFFF;
-}
+  input:focus {
+    outline: none;
+    border-color: #FFFFFF;
+  }
 */
 
 button {
@@ -153,3 +153,37 @@ button {
   font-size: 20px;
   /* border-radius: 150px; */
 }
+
+
+.login-container {
+  height: 200px;
+  position: relative;
+  border: 3px solid green;
+}
+
+.vertical-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+a:link {
+  color: pink;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+a:visited {
+  color: pink;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+a:hover {
+  color: white;
+  background-color: transparent;
+  text-decoration: underline;
+}
+

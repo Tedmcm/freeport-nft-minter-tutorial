@@ -45,14 +45,10 @@ export const upload2DDC = async (gatewayUrl, sessionToken, minter, minterEncrypt
         description //Descriptive text
     };
     const uploadUrl = `${gatewayUrl}/assets/v2`;
-    try {
-      const httpRes = await upload(uploadUrl, uploadData, sessionToken);
-      const contentId = httpRes.data;
-      const previewUrl = `${gatewayUrl}/assets/v2/${minter}/${contentId}/preview`;
-      return {contentId, previewUrl, status: "Upload successful"};
-    } catch (err) {
-      return {contentId: undefined, status: "Upload failed: "+err}
-    }
+    const httpRes = await upload(uploadUrl, uploadData, sessionToken);
+    const contentId = httpRes.data;
+    const previewUrl = `${gatewayUrl}/assets/v2/${minter}/${contentId}/preview`;
+    return {contentId, previewUrl, status: "Upload successful"};
 };
 
 // Post HTTP request, parse response and return uploadId

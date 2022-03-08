@@ -20,7 +20,7 @@ import {
     utilSign,
 } from "./util";
 
-const PROXY_SERVER = "https://ddc.freeport.dev.cere.network";
+const DDC_GATEWAY = "https://ddc.freeport.dev.cere.network";
 
 
 const Main = (props) => {
@@ -38,14 +38,14 @@ const Main = (props) => {
   const [previewMain, setPreviewMain] = useState(null);
   const [downloadedImage, setDownloadedImage] = useState(null);
   // State variables - Mint NFT
-  const [metadata, setMetadata] = useState("");
+  const [metadata, setMetadata] = useState("0");
   const [qty, setQty] = useState(1);
   const [nftId, setNftId] = useState(null);
   // State variables - Statuses
   const [status, setStatus] = useState("");
   const [uploadOutput, setUploadOutput] = useState("Content ID:");
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [mintOutput, setMintOutput] = useState("NFT ID:");
+  const [mintOutput, setMintOutput] = useState("");
   const [attachOutput, setAttachOutput] = useState("Attachment transaction link:");
 
   const [sessionToken, setSessionToken] = useState(null);
@@ -87,23 +87,32 @@ const Main = (props) => {
 
   const onUploadPressed = async () => {
     setCid(null);
-    const { contentId, previewUrl, status } = await upload2DDC(PROXY_SERVER, 
-        sessionToken, 
-        minter, 
-        minterEncryptionKey, 
-        uploadData, 
-        previewData, 
-        uploadDataTitle, 
-        uploadDataDescription);
-    setStatus(status);
-    setPreviewUrl(previewUrl);
-    setCid(contentId);
-    setUploadOutput("Content ID: " + contentId);
+    try {
+      setUploadOutput("Uploading...");
+      setPreviewUrl(null);
+      setCid(null);
+      const { contentId, previewUrl, status } = await upload2DDC(
+          DDC_GATEWAY, /* Server Address */ 
+          sessionToken, /* Session token */
+          minter,  /* User wallet */
+          minterEncryptionKey,  /* User's public encryption key */
+          uploadData, /* main image file to upload */
+          previewData, /* Preview image file */
+          uploadDataTitle, /* Human readable title */
+          uploadDataDescription /* Human readable description of this data */
+      );
+      setStatus(status);
+      setPreviewUrl(previewUrl);
+      setCid(contentId);
+      setUploadOutput("Content ID: " + contentId);
+    } catch (error) {
+      setUploadOutput("" + error);
+    }
   }
 
   const onDownloadPressed = async () => {
     setDownloadedImage(null);
-    const { status, content} = await downloadFromDDC(PROXY_SERVER, sessionToken, provider, minter, cid);
+    const { status, content} = await downloadFromDDC(DDC_GATEWAY, sessionToken, provider, minter, cid);
     setStatus(status);
     setDownloadedImage(URL.createObjectURL(content));
   };
@@ -116,18 +125,19 @@ const Main = (props) => {
 
 
   const onAttachPressed = async () => {
+    setAttachOutput("Attaching content to NFT...");
     const { status, tx } = await attachNftToCid(nftId, cid);
     setStatus(status);
-    setAttachOutput(<a href={"https://mumbai.polygonscan.com/tx/"+tx}>Attachment transaction hash: {tx}</a>)
+    setAttachOutput(<a href={"https://mumbai.polygonscan.com/tx/"+tx}>Transaction Link</a>)
   };
 
   const onClearOutputPressed = async () => {
     setStatus("Follow the steps below.");
     setUploadData(null);
     setPreview(null);
-    setUploadOutput("Content ID:")
-    setMintOutput("NFT ID:")
-    setAttachOutput("Attachment transaction link:")
+    setUploadOutput(null)
+    setMintOutput(null)
+    setAttachOutput(null)
   };
   const login = async () => {
     const provider = importProvider();
@@ -136,7 +146,7 @@ const Main = (props) => {
     const minter = await utilGetOwnerAddress(ethereum, accounts);
     const minterEncryptionKey = await utilGetEncPubKey(ethereum, accounts);
 
-    const url = PROXY_SERVER;
+    const url = DDC_GATEWAY;
 
     const nonce = await getNonce(minter, url);
     const sessionToken = await authorize(url, provider, minter, minterEncryptionKey, nonce);
@@ -237,18 +247,15 @@ const Main = (props) => {
 
           </Card.Body>
           <Card.Footer>
-            { cid && <Container>
+            { uploadOutput && <Container>
               <Row > 
                 <Col >
-                  Content ID:
-                </Col>
-                <Col >
-                  {cid}
+                  {uploadOutput}
                 </Col>
               </Row>
               <Row > 
                 <Col>
-                  <a href={previewUrl}> Preview Link </a>     
+                  { previewUrl && <a href={previewUrl}> Preview Link </a>   }  
                 </Col>
               </Row>
             </Container>}
@@ -318,6 +325,14 @@ const Main = (props) => {
             </Container>    
           </Card.Body>
           <Card.Footer>
+          {mintOutput && <Container>
+              <Row> 
+                <Col >
+                   {mintOutput}
+                </Col>
+              </Row>  
+              </Container>
+          }
           </Card.Footer>
         </Card>
       </Col>
@@ -349,11 +364,16 @@ const Main = (props) => {
                 </Col>
               </Row>
             </Container>    
-
-
-
           </Card.Body>
           <Card.Footer>
+          {attachOutput && <Container>
+              <Row> 
+                <Col >
+                   {attachOutput}
+                </Col>
+              </Row>  
+              </Container>
+          }
           </Card.Footer>
         </Card>
       </Col>
@@ -400,7 +420,7 @@ const Main = (props) => {
       </Fragment>
       }
       
-      { sessionToken ? AuthenticatedView() : MetamaskLogin({url: PROXY_SERVER, login: login})
+      { sessionToken ? AuthenticatedView() : MetamaskLogin({url: DDC_GATEWAY, login: login})
       } 
 
 
@@ -410,11 +430,15 @@ const Main = (props) => {
 
 
 const MetamaskLogin = ({login}) => (
-      <Card bg="dark" border="secondary">
-        <Card.Body>
+<div className="login-container">
+  <div class="vertical-center">
+      <Card bg="secondary" border="secondary">
+        <Card.Header>
           <Card.Title>Login</Card.Title>
-          <Card.Subtitle className="mb-2 text-muted">Login with Metamask</Card.Subtitle>
-          <Card.Text bg="dark" style={{color: "lightgray"}}>
+          <Card.Subtitle className="mb-2 ">Login with Metamask</Card.Subtitle>
+        </Card.Header>
+        <Card.Body>
+          <Card.Text>
             Logging in with Metamask allows you to setup a session with the DDC Gateway to minimize wallet 
             (e.g. metamask) interactions. The Gateway caches the encryption key and significantly improves 
             usability when you upload files multiple times (e.g. drag and drop scenarios)
@@ -422,6 +446,8 @@ const MetamaskLogin = ({login}) => (
           <Button onClick={login}> Login </Button>
         </Card.Body>
       </Card>
+  </div>
+</div>
 );
 const MetamaskLogout = ({logout, address}) => (
     <Container>
@@ -449,24 +475,3 @@ const getNonce = async (minter, baseUrl) => {
 
 
 export default Main;
-
-
-const Demo = ({variant, idx}) => (
-
-  <Card
-    bg={variant.toLowerCase()}
-    key={idx}
-    text={variant.toLowerCase() === 'light' ? 'dark' : 'white'}
-    style={{ width: '18rem' }}
-    className="mb-2"
-  >
-    <Card.Header>Header</Card.Header>
-    <Card.Body>
-      <Card.Title>{variant} Card Title </Card.Title>
-      <Card.Text>
-        Some quick example text to build on the card title and make up the bulk
-        of the card's content.
-      </Card.Text>
-    </Card.Body>
-  </Card>
-);
