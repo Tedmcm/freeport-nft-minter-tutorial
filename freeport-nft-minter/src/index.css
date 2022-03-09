@@ -99,7 +99,7 @@ button {
 
 }
 
-#actionButton {
+#actionButton, .actionButton {
   margin-top: 40px;
   background-color: #B72193;
   border-color: #B72193;

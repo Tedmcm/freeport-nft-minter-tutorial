@@ -95,15 +95,17 @@ export const downloadFromDDC = async (gatewayUrl, sessionToken, provider, minter
 
 export const mintNFT = async (quantity, metadata) => {
   // Do not allow the user to mint an NFT without metadata. Must not be empty string. 
-  if (metadata.trim() == "" || (quantity < 1)) { return { success: false, status: "Please complete all fields before minting." } }
+  if (metadata.trim() === "" || (quantity < 1)) { return { success: false, status: "Please complete all fields before minting." } }
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
   const env = "prod";
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getFreeportAddress(provider, env);
+  console.log("CA", contractAddress)
   // Create an instance of the Freeport contract using the provider and Freeport contract address
   const contract = createFreeport( { provider, contractAddress } );
+  console.log("freeport contract ", contract);
   try {
     // Call the issue() function from the Freeport smart contract.
     const tx = await contract.issue(quantity, utilStr2ByteArr(metadata));
@@ -153,9 +155,3 @@ export const utilStr2ByteArr = (str) => {
     }
     return arr;
 }
-
-const getPreviewUrl = async (baseUrl, minter, cid, jwt) => {
-  const result = await httpGet(`${baseUrl}/assets/v2/${minter}/${cid}/preview`);
-    console.log("Preview result", result);
-  return result.data;
-};

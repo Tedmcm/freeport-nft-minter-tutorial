@@ -11,7 +11,9 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-import { importProvider, } from "@cere/freeport-sdk";
+import TransferView from "./Transfer";
+
+import { importProvider } from "@cere/freeport-sdk";
 import {
     utilProvider2Ethereum,
     utilGetAccounts,
@@ -337,7 +339,7 @@ const Main = (props) => {
         </Card>
       </Col>
       <Col>
-        <Card  bg="secondary" border="secondary" text="light">
+        <Card bg="secondary" border="secondary" text="light">
           <Card.Header >
             <Card.Title style={{color: "white"}}>Attach</Card.Title>
             <Card.Subtitle className="mb-2">Attach NFT to CID</Card.Subtitle>
@@ -376,6 +378,9 @@ const Main = (props) => {
           }
           </Card.Footer>
         </Card>
+      </Col>
+      <Col>
+        <TransferView/>
       </Col>
     </Row>
     </Container>
