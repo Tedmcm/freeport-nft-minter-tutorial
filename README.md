@@ -1,3 +1,5 @@
+Cere Freeport is Cere's NFT minting and asset management solution. For an oveview of the architecture, please see: ![architecture document](architecture.jpg)
+
 # Minting NFTs on Polygon with Cere Freeport
 In this tutorial, you'll learn how to connect a React frontend to Cere Freeport's smart contracts using Metamask and the Freeport SDK. You will learn how to:
 
