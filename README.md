@@ -1,7 +1,8 @@
 # Minting NFTs on Polygon with Cere Freeport
 In this tutorial, you'll learn how to connect a React frontend to Cere Freeport's smart contracts using Metamask and the Freeport SDK. You will learn how to:
 
-* Upload asset files (e.g., an image) to Cere's DDC.
+* Setup a metamask-based login session with Cere DDC Gateway
+* Upload asset image files to Cere's DDC.
 * Locate and download this asset from Cere's DDC.
 * Mint NFTs using Cere Freeport.
 * Attach the content to the NFT.
@@ -10,7 +11,14 @@ Here's what your final product will look like.
 
 <img src="./preview.png" width="700">
 
-# The process of minting an NFT
+# Function Naming Conventions
+
+Each of the rectangular panels - upload, download, etc - is a react component that implements the UI for the respective functionality. The panels are named as `Panelxxx`, e.g. `PanelMetamaskLogin`, `PanelUpload`, etc.
+
+Different button click callbacks are named as onXXXPressed where XXX is the button name. For example, `onLoginPressed`, `onUploadPressed` etc.
+
+# The Overall Flow
+
 The process of minting NFTs generally involves 3 steps:
 
 1. The Freeport ERC-1155 smart contract must be instantiated on the blockchain.  This is done by caling the `issue` function on the smart contract.
@@ -51,7 +59,7 @@ First, clone this repository to your local environment. It contains two folders:
 
 Before starting, we must install some libraries, including the Cere Freeport SDK. In a terminal, navigate to the `starter-files` folder and run the following command:
 
-    npm install -S ethers axios bs58 buffer @cere/freeport-sdk
+    npm install
 
 Once these have finished installing, run the following command in the `starter-files` directory
 
@@ -70,7 +78,6 @@ Open the following two files:
 Now let's start coding! Each code block below is preceeded by a header representing the function you're editing and its corresponding file name in [brackets].
 
 # Connecting to your Metamask wallet
-> [PK] - this entire section is unnecessary in my view, and takes away from the main goal of the tutorial. I'd suggest removing it. Leave the code in the files so the functionality is thre, but we should not be in the business of explaining the basic wallet functionality.
 
 ## `1. connectWallet [actions.js]`
 
@@ -156,160 +163,173 @@ useEffect(async () => {
 }, []);
 ```
 
+# Login to the DDC Gateway using Metamask
+
+
 # Uploading your asset to DDC
 
 ## `1. upload2DDC [actions.js]`
-This is where we start using Cere Freeport.
-> [PK] Describe what we're doing here. For example, we get our address, encryptionkey, etc from metamask, sign an authentication msg and upload a file with content from the text field.
+
+This function makes an HTTP post request to the Cere DDC API, followed by a series of HTTP get requests (max 3) to obtain the upload status of your asset. The HTTP post request requires your wallet address, your wallet's public encryption key, a signed authentication message, and of course the asset along with it's associated title and description. The function then returns a CID for the content you uploaded.
+
 
 ```javascript
-export const upload2DDC = async (data, title, description) => {
-  // Get the wallets that are connected to metamask
-  const accounts = await window.ethereum.request({ method: "eth_accounts" });
-  // Get the user's wallet address
-  const minter = accounts[0]
-  // Here we request that the user shares their public encryption key.
-  const minterEncryptionKey = await window.ethereum.request({ method: 'eth_getEncryptionPublicKey', params: [minter] });
-  // Create a new provider, which is an abstraction of a connection to the Ethereum network
-  const provider = importProvider()
-  // Get the user's account. A 'signer' is an abstraction of an Ethereum account.
-  const signer = provider.getSigner();
-  // Wait one second.
-  await sleepFor(1);
-  // Create the signature
-  const signature = await signer.signMessage(`Confirm asset upload\nTitle: ${title}\nDescription: ${description}\nAddress: ${minter}`);
-  // Construct a set of key/value pairs representing the fields required by the Cere DDC API.
-  let fdata = new FormData();
-  fdata.append('minter', minter);
-  fdata.append('file', data);
-  fdata.append('signature', signature);
-  fdata.append('minterEncryptionKey', minterEncryptionKey);
-  fdata.append('description', description);
-  fdata.append('title', title);
-  // Make an HTTP post request to the Cere DDC API using the FormData object we defined above.
-  const httpPostResponse = await httpPost("https://ddc.freeport.stg.cere.network/assets/v1", fdata, { headers: {'Content-Type': 'multipart/form-data'} });
-  // This post request contains a string corresponding to the uploadId of your upload request.
-  const uploadId = httpPostResponse.data.id
-  // With this uploadId, we make a get request to the Cere DDC API to get the contentId of our upload.
-  // This content will not exist until the upload is complete.
-  // We repeat this request until the file is uploaded or the upload fails (max 3 attempts)
-  let contentId = null;
-  var attempts = 1;
-  while (!contentId) {
-    attempts ++;
-    let httpGetResponse = await httpGet(`https://ddc.freeport.stg.cere.network/assets/v1/${uploadId}`);
-    contentId = httpGetResponse.data.result;
-    // When the contentId is no longer null, the upload is considered successful. Return the contentId of this upload.
-    if (contentId){ return {contentId: contentId, status: "Upload successful."}; }
-    // If HTTP get request fails, then the upload was not successful. Return an empty string.
-    if (httpGetResponse.failed) { return { contentId: "", status: "DDC upload failed" }; }
-    // If this while loop unsucessfully makes 3 attempts at receiving a non-null contentId, give up and return an empty string.
-    if (attempts == 3){ return { contentId: "", status: "Unable to get upload status after 3 attempts" }; }
-    // Wait 10 seconds before trying again.
-    await sleepFor(10);
-  }
+export const upload2DDC = async (gatewayUrl, sessionToken, minter, minterEncryptionKey, data, preview, title, description) => {
+    const uploadData = {
+        minter, // Owner address
+        file: data, // binary file
+        preview,
+        minterEncryptionKey, // Minter encryption key
+        title, // Asset title
+        description //Descriptive text
+    };
+    const uploadUrl = `${gatewayUrl}/assets/v2`;
+    const httpRes = await upload(uploadUrl, uploadData, sessionToken);
+    const contentId = httpRes.data;
+    const previewUrl = `${gatewayUrl}/assets/v2/${minter}/${contentId}/preview`;
+    return {contentId, previewUrl, status: "Upload successful"};
 };
+
 ```
 
 ## `2. onUploadPressed [Main.js]`
-> [PK] Give some context and explain what is happening in this section. We can even remove this because this is standard react stuff. You can explain in the above upload2DDC section that that function is called upon button press, adn leave it at that.
 
-This function simply calls the `upload2DDC` function and sets the state variables `status` and `uploadOutput` with the values it returns.
+This function simply calls the upload2DDC function and sets the state variables status and uploadOutput with the CID it returns. The status and CID are then printed to your browser to serve as inputs for the functions below.
+
+This function simply calls the `upload2DDC` function and sets a number of state variables such as `status` and `uploadOutput` with the values it returns (used for display purposes).
+
 ```javascript
-const onUploadPressed = async () => {
-  const { contentId, status } = await upload2DDC(uploadData, uploadDataTitle, uploadDataDescription);
-  setStatus(status);
-  setUploadOutput("Content ID: " + contentId);
-}
+  const onUploadPressed = async () => {
+    setCid(null);
+    try {
+      setUploadOutput("Uploading...");
+      setPreviewUrl(null);
+      setCid(null);
+      const { contentId, previewUrl, status } = await upload2DDC(
+          DDC_GATEWAY, /* Server Address */ 
+          sessionToken, /* Session token */
+          minter,  /* User wallet */
+          minterEncryptionKey,  /* User's public encryption key */
+          uploadData, /* main image file to upload */
+          previewData, /* Preview image file */
+          uploadDataTitle, /* Human readable title */
+          uploadDataDescription /* Human readable description of this data */
+      );
+      setStatus(status);
+      setPreviewUrl(previewUrl);
+      setCid(contentId);
+      setUploadOutput("Content ID: " + contentId);
+    } catch (error) {
+      setUploadOutput("" + error);
+    }
+  }
 ```
 
 # Downloading your asset from DDC
 
 ## `1. downloadFromDDC [actions.js]`
+
+This function makes an HTTP get request to the Cere DDC API to download the asset you just uploaded by providing it with its CID. Similar to the upload2DDC function, you will need to provide your wallet address and a signed authentication message to acceess this content on DDC.
+
+
 ```javascript
-export const downloadFromDDC = async (contentId) => {
-  // Create a new provider, which is an abstraction of a connection to the Ethereum network.
-  const provider = importProvider();
-  // Get the wallets that are connected to metamask
-  const accounts = await window.ethereum.request({ method: "eth_accounts" });
-  // Get the user's wallet address
-  const minter = accounts[0];
-  // Get the user's account. A 'signer' is an abstraction of an Ethereum account.
+export const downloadFromDDC = async (gatewayUrl, sessionToken, provider, minter, contentId) => {
   const signer = provider.getSigner();
   // Wait one second.
   await sleepFor(1);
-  // Create the signature
-  const signature = await signer.signMessage(`Confirm identity:\nMinter: ${minter}\nCID: ${contentId}\nAddress: ${minter}`);
-  // Construct a set of key/value pairs representing the fields required by the Cere DDC API.
-  const results = await httpGet(`https://ddc.freeport.stg.cere.network/assets/v1/${minter}/${contentId}/content`, {
+  // Create the signature 
+  const signature = await signer.signMessage(`${minter}${contentId}${minter}`); 
+  // Construct a set of key/value pairs representing the fields required by the Cere DDC API. 
+  const headers = { 
+    'X-DDC-Signature': signature, 
+    'X-DDC-Address': minter,
+    Authorization: `Bearer ${sessionToken}`
+  };
+  const downloadUrl = `${gatewayUrl}/assets/v2/${minter}/${contentId}/content`;
+  const results = await httpGet(downloadUrl, {
       responseType: 'blob',
-      headers: { 'X-DDC-Signature': signature, 'X-DDC-Address': minter }});
+      headers
+  });
   // Return the downloaded data
   return { status: "Download complete.", content: results.data };
 };
 ```
 
 ## `2. onDownloadPressed [Main.js]`
-This function simply calls the `downloadFromDDC` function and sets the state variables `status` and `downloadOutput` with the content it returns.
+
+This function simply calls the downloadFromDDC function and sets the state variables status and downloadedImage with the content (e.g., image) that is returned. The downloadedImage and status are then displayed in your browser to confirm that your download was sucessful.
+
 ```javascript
-const onDownloadPressed = async () => {
-  const { status, content} = await downloadFromDDC(cid);
-  setStatus(status);
-  setDownloadedImage(URL.createObjectURL(content));
-};
+  const onDownloadPressed = async () => {
+    setDownloadedImage(null);
+    const { status, content} = await downloadFromDDC(DDC_GATEWAY, sessionToken, provider, minter, cid);
+    setStatus(status);
+    setDownloadedImage(URL.createObjectURL(content));
+  };
 ```
 
 # Minting your NFT
 
 
 ## `1. mintNFT [actions.js]`
-The `mintNFT` function takes two input parameters: `quantity`, the number of NFT's you would like to mint, and `metadata`, a string that will be permanently attached to your NFT.
+
+The mintNFT function takes two input parameters: quantity, the number of NFT's you would like to mint, and metadata, a string that will be permanently attached to your NFT. It then calls the issue() function of the Freeport smart contract and returns an nftId and a status.
+
 ```javascript
 export const mintNFT = async (quantity, metadata) => {
-  // Do not allow the user to mint an NFT without metadata. Must not be empty string.
-  if (metadata.trim() == "" || (quantity < 1)) { return { success: false, status: "Please complete all fields before minting." } }
+  // Do not allow the user to mint an NFT without metadata. Must not be empty string. 
+  if (metadata.trim() === "" || (quantity < 1)) { return { success: false, status: "Please complete all fields before minting." } }
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
-  const env = "prod";
+  const env = API_ENV;
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getFreeportAddress(provider, env);
+  console.log("CA", contractAddress)
   // Create an instance of the Freeport contract using the provider and Freeport contract address
   const contract = createFreeport( { provider, contractAddress } );
+  console.log("freeport contract ", contract);
   try {
     // Call the issue() function from the Freeport smart contract.
     const tx = await contract.issue(quantity, utilStr2ByteArr(metadata));
     const receipt = await tx.wait();
-    const nftId = receipt.events[0].args[3].toString();
-    // Return the transaction hash and the NFT id.
+    const nftId = receipt.events[0].args[3].toString(); 
+    // Return the transaction hash and the NFT id.  
     return { status: "Minting complete.", tx: tx.hash, nftId: nftId }
-    // If something goes wrong, catch that error.
+    // If something goes wrong, catch that error. 
   } catch (error) { return { status: "Something went wrong: " + error.message }; }
 };
+
 ```
 ## `2. onMintPressed [Main.js]`
-This function simply calls the `mintNFT` function and sets the state variables `status` and `mintOutput` with the values it returns.
+
+This function simply calls the mintNFT function and sets the state variables status and mintOutput with the nftId that is returned. The nftId and status are then displayed in your browser to confirm that the minting process was sucessful.
+
 ```javascript
-const onMintPressed = async () => {
-  const { tx, nftId, status } = await mintNFT(+qty, metadata)
-  setStatus(status);
-  setMintOutput("NFT ID: " + nftId);
-};
+  const onMintPressed = async () => {
+    setMintOutput("Creating NFT...");
+    const { tx, nftId, status } = await mintNFT(+qty, metadata)
+    setStatus(status);
+    setMintOutput("NFT ID: " + nftId);
+  };
+
 ```
 
 
 # Attaching your asset to your NFT
 
 ## `1. attachNftToCid [actions.js]`
-The `attachNftToCid` function takes two input parameters: `nftId`, a unique identifier of your NFT, and `metadata`, a string that will be permanently attached to your NFT.
+
+The attachNftToCid function takes two input parameters: nftId, a unique identifier of your NFT, and the CID of the asset you uploaded to Cere DDC. It then calls the attachToNft function from the Freeport createNFTAttachment smart contract and creates a mapping from the NFT you minted to your asset on DDC.
+
 ```javascript
 export const attachNftToCid = async (nftId, cid) => {
-  // Do not allow the user call this function without a nftId and cid
+  // Do not allow the user call this function without a nftId and cid 
   if ( !nftId || !cid) { return { success: false, status: "Please complete all fields before attaching." } }
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
-  const env = "prod";
+  const env = API_ENV;
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getNFTAttachmentAddress(provider, env);
   // Create an instance of the Freeport contract using the provider and Freeport contract address
@@ -317,27 +337,62 @@ export const attachNftToCid = async (nftId, cid) => {
   // You need 46 bytes to store a IPFS CID.
   // If you express it in hexadecimal, it becomes 34 bytes long (68 characters with 1 byte per 2 characters).
   // However, the first two characters of the hexadecimal represent the hash function being used.
-  // Since that's the only format that IPFS uses, we can drop this information and obtain a 32 byte long
-  // value that fits in a bytes32 fixed-size byte array required by 'attachToNFT' smart contract function below.
+  // Since that's the only format that IPFS uses, 
+  // we drop this information and obtain a 32 byte long value that fits in a bytes32 fixed-size byte array.
   const bytes32FromIpfsHash = "0x"+bs58.decode(cid).slice(2).toString('hex');
   try {
     // Call the attachToNFT() function from the CreateNFTAttachment smart contract.
     const tx = await contract.attachToNFT(nftId, bytes32FromIpfsHash);
-    // Return the transaction hash of this attachement.
+    // Return the transaction hash of this attachement.  
     return { success: true, status: "NFT and CID attached.", tx: tx.hash };
-    // If something goes wrong, catch that error.
+    // If something goes wrong, catch that error. 
   } catch (error) { return { success: false, status: "Something went wrong: " + error.message }; }
 };
+
 ```
 
 ## `2. onAttachPressed [Main.js]`
-This function simply calls the `attachNftToCid` function and sets the state variable `status` and the state variable `attachOutput` with a link to the corresponding transaction.
+
+This function simply calls the attachNftToCid function and sets the state variable status and the state variable attachOutput with a clickable link to the NFT-asset attachment transaction.
+
 ```javascript
-const onAttachPressed = async () => {
-  const { status, tx } = await attachNftToCid(nftId, cid);
-  setStatus(status);
-  setAttachOutput(<a href={"https://mumbai.polygonscan.com/tx/"+tx}>Attachment transaction hash: {tx}</a>)
+  const onAttachPressed = async () => {
+    setAttachOutput("Attaching content to NFT...");
+    const { status, tx } = await attachNftToCid(nftId, cid);
+    setStatus(status);
+    setAttachOutput(<a href={"https://mumbai.polygonscan.com/tx/"+tx}>Transaction Link</a>)
+  };
+```
+
+# Transfering your NFT
+
+The `transfer` function uses the standard ERC 1155's `safeTransferFrom` function to a different user.
+
+```javascript
+export const transfer = async (env, to, nftId) => {
+    const provider = importProvider();
+    const contractAddress = await getFreeportAddress(provider, env);
+
+    // Contract object
+    const contract = createFreeport({
+        provider,
+        contractAddress
+    });
+
+    // find from address
+    const accounts = await provider.provider.request({ method: 'eth_requestAccounts' });
+    const from = accounts[0];
+
+
+    const tx = await contract.safeTransferFrom(from, to, nftId, 1, [0]);
+    const receipt = await tx.wait();
+    console.log(receipt);
+
+    return tx;
 };
 ```
 
+# Conclusion
+
 Congratulations! You've completed the tutorial. Now you can upload an asset to Cere DDC, mint an NFT and attach them to one another using Cere Freeport.
+

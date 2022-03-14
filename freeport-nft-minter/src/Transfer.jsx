@@ -7,22 +7,21 @@ import {
 
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
-import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-const TransferView = () => {
+const API_ENV = "dev";
+
+const TransferView = ({ env }) => {
   const [tx, setTx] = useState(null);
-  const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
   const [nftId, setNftId] = useState(null);
 
-  const onFromInput = e => setFrom(e.target.value);
   const onToInput = e => setTo(e.target.value);
   const onNftIdInput = e => setNftId(e.target.value);
 
   const submit = async () => {
-  	const tx = await transfer(to, nftId);
+  	const tx = await transfer(env, to, nftId);
   	setTx(tx.hash);
   };
 
@@ -64,10 +63,8 @@ const TxLink = ({url}) => (
 
 
 
-export const transfer = async (to, nftId) => {
+export const transfer = async (env, to, nftId) => {
     const provider = importProvider();
-    const env = "prod";
-    debugger
     const contractAddress = await getFreeportAddress(provider, env);
 
     // Contract object

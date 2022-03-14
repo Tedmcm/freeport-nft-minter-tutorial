@@ -11,7 +11,8 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-import TransferView from "./Transfer";
+import PanelTransfer from "./Transfer";
+import TokenListView from "./Lister";
 
 import { importProvider } from "@cere/freeport-sdk";
 import {
@@ -22,11 +23,12 @@ import {
     utilSign,
 } from "./util";
 
-const DDC_GATEWAY = "https://ddc.freeport.dev.cere.network";
 
+const API_ENV = "dev";
+const DDC_GATEWAY = `https://ddc.freeport.${API_ENV}.cere.network`;
+const API_GATEWAY = `https://api.freeport.${API_ENV}.cere.network`;
 
 const Main = (props) => {
-
   // State variables - Connecting wallet
   const [walletAddress, setWalletAddress] = useState("");
   // State variables - Upload content
@@ -49,6 +51,8 @@ const Main = (props) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [mintOutput, setMintOutput] = useState("");
   const [attachOutput, setAttachOutput] = useState("Attachment transaction link:");
+
+  const [listOutput, setListOutput] = useState("");
 
   const [sessionToken, setSessionToken] = useState(null);
   const [minter, setMinter] = useState(null);
@@ -120,11 +124,11 @@ const Main = (props) => {
   };
 
   const onMintPressed = async () => {
+    setMintOutput("Creating NFT...");
     const { tx, nftId, status } = await mintNFT(+qty, metadata)
     setStatus(status);
     setMintOutput("NFT ID: " + nftId);
   };
-
 
   const onAttachPressed = async () => {
     setAttachOutput("Attaching content to NFT...");
@@ -141,7 +145,8 @@ const Main = (props) => {
     setMintOutput(null)
     setAttachOutput(null)
   };
-  const login = async () => {
+  
+  const onLoginPressed = async () => {
     const provider = importProvider();
     const ethereum = utilProvider2Ethereum(provider);
     const accounts = await utilGetAccounts(ethereum);
@@ -162,7 +167,8 @@ const Main = (props) => {
     setProvider(provider);
     setSessionToken(sessionToken);
   };
-  const logout = () => {
+
+  const onLogoutPressed = () => {
     setMinter(null);
     setMinterEncryptionKey(null);
     setProvider(null);
@@ -171,7 +177,8 @@ const Main = (props) => {
     LocalStorage.set('minterEncryptionKey', null);
     LocalStorage.set('sessionToken', null);
   };
-    // read from local storage
+  
+  // read from local storage
   useEffect(() => {
     
     const minter = LocalStorage.get('minter');
@@ -183,17 +190,7 @@ const Main = (props) => {
     setSessionToken(sessionToken);
   })
 
-
-  const AuthenticatedView = () => (
-    <Container fluid="md" bg="dark">
-      <Row >
-        <Col className="col-10"/>
-        <Col>
-          <MetamaskLogout address={minter} logout={logout}/>
-        </Col>
-      </Row>
-      <Row lg={2} md="auto" className="g-4">
-      <Col >
+  const PanelUpload = () => (
         <Card  bg="secondary" border="secondary" text="light">
           <Card.Header >
               <Card.Title>Upload</Card.Title>
@@ -263,8 +260,9 @@ const Main = (props) => {
             </Container>}
           </Card.Footer>          
         </Card>
-      </Col>
-      <Col>
+  );
+
+  const PanelDownload = () => (
         <Card  bg="secondary" border="secondary" text="light">
           <Card.Header >
             <Card.Title >Download </Card.Title>
@@ -280,7 +278,6 @@ const Main = (props) => {
                   <input type="text" placeholder="Content ID from upload step." onChange={(event) => setCid(event.target.value)}/>
                 </Col>
               </Row>  
-
               <Row > 
                 <Col >
                   <Button id="actionButton" onClick={onDownloadPressed}> Download </Button>      
@@ -301,10 +298,10 @@ const Main = (props) => {
               </Row>  
               </Container>}
           </Card.Footer>
-
         </Card>
-      </Col>
-      <Col>
+  );
+
+  const PanelMint = () => (
         <Card  bg="secondary" border="secondary" text="light">
           <Card.Header >
             <Card.Title style={{color: "white"}}>Mint</Card.Title>
@@ -337,8 +334,9 @@ const Main = (props) => {
           }
           </Card.Footer>
         </Card>
-      </Col>
-      <Col>
+  );
+
+  const PanelAttach = () => (
         <Card bg="secondary" border="secondary" text="light">
           <Card.Header >
             <Card.Title style={{color: "white"}}>Attach</Card.Title>
@@ -378,82 +376,116 @@ const Main = (props) => {
           }
           </Card.Footer>
         </Card>
-      </Col>
-      <Col>
-        <TransferView/>
-      </Col>
-    </Row>
-    </Container>
-    );
+  );
 
-
-  return (   
-    <div style={{backgroundColor:"black"}}>
-      <button id="walletButton" onClick={connectWalletPressed}>
-        {walletAddress.length > 0 ? ("Connected: " + String(walletAddress).substring(0, 6) + "..." + String(walletAddress).substring(38)) : (<span>Connect Wallet</span>)}
-      </button>
-
-      { sessionToken && 
-      <Fragment>
-      <h1 style={{color:"white"}}> Create an NFT with Cere Freeport and DDC </h1>
-
-      {/*
-      <Container fluid="md">
-        <Row>
-        <Card  bg="dark" border="secondary">
-          <Card.Body>
-            <Card.Title style={{color: "white"}}>Status</Card.Title>
-            <Card.Subtitle className="mb-2 text-muted">Output Messages</Card.Subtitle>
-
-            <div className="header">
-              <h3>Status message:</h3>
-              <p id="status"> {status} </p>
-            </div>
-
-            <div className="header2">
-              <h3>Outputs:</h3>
-              <div> {uploadOutput} </div>
-              <div> {mintOutput} </div>
-              <div> {attachOutput} </div>
-            </div>
-          <Button id="actionButton" onClick={onClearOutputPressed}>Clear output</Button>   
-          </Card.Body>
-        </Card>
-        </Row>
-      </Container>
-    */}
-      </Fragment>
+  const PanelTokenList= () => (
+    <Card bg="secondary" border="secondary" text="light">
+      <Card.Header >
+        <Card.Title style={{color: "white"}}>List</Card.Title>
+        <Card.Subtitle className="mb-2">List my tokens</Card.Subtitle>
+      </Card.Header >
+      <Card.Body>
+        <TokenListView env={API_ENV}/>
+      </Card.Body>
+      <Card.Footer>
+      {listOutput && <Container>
+          <Row> 
+            <Col >
+               {listOutput}
+            </Col>
+          </Row>  
+          </Container>
       }
-      
-      { sessionToken ? AuthenticatedView() : MetamaskLogin({url: DDC_GATEWAY, login: login})
-      } 
+      </Card.Footer>
+    </Card>      
+  );
 
-
+  const PanelAuthenticated = () => (
+    <div>
+      <h1 style={{color:"white"}}> Create an NFT with Cere Freeport and DDC </h1>
+      <Container fluid="md" bg="dark">
+        <Row>
+          <Col className="col-10"/>
+          <Col>
+            <MetamaskLogout address={minter} logout={onLogoutPressed}/>
+          </Col>
+        </Row>
+        <Row  lg={2} md={2} className="g-4">
+        <Col >
+          <PanelUpload/>
+        </Col>
+        <Col>
+          <PanelDownload/>
+        </Col>
+        <Col>
+          <PanelMint/>
+        </Col>
+        <Col>
+          <PanelAttach/>
+        </Col>
+        <Col>
+          <PanelTransfer env={API_ENV}/>
+        </Col>
+        <Col>
+          <PanelTokenList/>
+        </Col>
+      </Row>
+      </Container>
     </div>
   );
+
+  const WalletConnectPanel = () => (
+    <div style={{float: "right"}}>
+      <span style={{color:"white", float: "right"}}> Using {API_ENV} environment </span>
+      <Button variant="secondary" onClick={connectWalletPressed}>
+        {walletAddress.length > 0 ? 
+          ("Connected: " + String(walletAddress).substring(0, 6) + "..." + String(walletAddress).substring(38)) 
+          : 
+          (<span>Connect Wallet</span>)
+        }
+      </Button>
+    </div>
+  );
+
+  const MainPanel = () => (
+    <div style={{backgroundColor:"black"}}>
+      <Stack style={{color:"white"}}>
+        <WalletConnectPanel/>
+        { sessionToken 
+          ? 
+            PanelAuthenticated()
+          : 
+            PanelMetamaskLogin({url: DDC_GATEWAY, login: onLoginPressed})
+        }
+      </Stack>
+    </div>
+  );
+
+  return <MainPanel/>;
 };
 
 
-const MetamaskLogin = ({login}) => (
-<div className="login-container">
-  <div class="vertical-center">
-      <Card bg="secondary" border="secondary">
-        <Card.Header>
-          <Card.Title>Login</Card.Title>
-          <Card.Subtitle className="mb-2 ">Login with Metamask</Card.Subtitle>
-        </Card.Header>
-        <Card.Body>
-          <Card.Text>
-            Logging in with Metamask allows you to setup a session with the DDC Gateway to minimize wallet 
-            (e.g. metamask) interactions. The Gateway caches the encryption key and significantly improves 
-            usability when you upload files multiple times (e.g. drag and drop scenarios)
-          </Card.Text>  
-          <Button onClick={login}> Login </Button>
-        </Card.Body>
-      </Card>
+const PanelMetamaskLogin = ({login}) => (
+  <div className="login-container">
+    <div class="vertical-center">
+        <Card bg="secondary" border="secondary">
+          <Card.Header>
+            <Card.Title>Login</Card.Title>
+            <Card.Subtitle className="mb-2 ">Login with Metamask</Card.Subtitle>
+          </Card.Header>
+          <Card.Body>
+            <Card.Text>
+              Logging in with Metamask allows you to setup a session with the DDC Gateway to minimize wallet 
+              (e.g. metamask) interactions. The Gateway caches the encryption key and significantly improves 
+              usability when you upload files multiple times (e.g. drag and drop scenarios)
+            </Card.Text>  
+            <Button onClick={login}> Login </Button>
+          </Card.Body>
+        </Card>
+    </div>
   </div>
-</div>
 );
+
 const MetamaskLogout = ({logout, address}) => (
     <Container>
       <Button variant="outline-secondary" onClick={logout}> Logout </Button>
@@ -463,12 +495,12 @@ const MetamaskLogout = ({logout, address}) => (
 // Authorize
 const authorize = async (baseUrl, provider, minter, encryptionPublicKey, nonce) => {
   const msgToSign = `${minter}${encryptionPublicKey}${nonce}`;
-    const signature = await utilSign(provider, minter, msgToSign);
-    const authUrl = `${baseUrl}/auth/v1/${minter}`;
-    const result = await httpPost(authUrl, {encryptionPublicKey, signature});
-    console.log("Auth result", result.data);
-    const token = result.data.accessToken;
-    return token;
+  const signature = await utilSign(provider, minter, msgToSign);
+  const authUrl = `${baseUrl}/auth/v1/${minter}`;
+  const result = await httpPost(authUrl, {encryptionPublicKey, signature});
+  console.log("Auth result", result.data);
+  const token = result.data.accessToken;
+  return token;
 };
 
 // Get NONCE for session

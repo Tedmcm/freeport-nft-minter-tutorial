@@ -2,6 +2,7 @@ import { importProvider, getFreeportAddress, createFreeport, getNFTAttachmentAdd
 import { get as httpGet, post as httpPost } from "axios";
 import bs58 from 'bs58';
 
+const API_ENV = "stage";
 
 export const connectWallet = async () => {
   // Check if window.ethereum is enabled in your browser (i.e., metamask is installed)
@@ -32,7 +33,6 @@ export const getCurrentWalletConnected = async () => {
     // Again, if window.ethereum is not enabled, then metamask must not be installed.
   } else { return { address: "", status: "Please install the metamask wallet" }; }
 };
-
 
 
 export const upload2DDC = async (gatewayUrl, sessionToken, minter, minterEncryptionKey, data, preview, title, description) => {
@@ -99,7 +99,7 @@ export const mintNFT = async (quantity, metadata) => {
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
-  const env = "prod";
+  const env = API_ENV;
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getFreeportAddress(provider, env);
   console.log("CA", contractAddress)
@@ -123,7 +123,7 @@ export const attachNftToCid = async (nftId, cid) => {
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
-  const env = "prod";
+  const env = API_ENV;
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getNFTAttachmentAddress(provider, env);
   // Create an instance of the Freeport contract using the provider and Freeport contract address

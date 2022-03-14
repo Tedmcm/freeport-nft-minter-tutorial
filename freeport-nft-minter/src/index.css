@@ -90,13 +90,13 @@ button {
 
 
 #walletButton {
-  text-align: right;
+/*  text-align: right;
   float:right;
   margin-bottom: 50px;
   line-height: 16px;
   color: #B72193;
   border-color: #161D30;
-
+*/
 }
 
 #actionButton, .actionButton {
