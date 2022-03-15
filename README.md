@@ -1,4 +1,7 @@
-Cere Freeport is Cere's NFT minting and asset management solution. For an oveview of the architecture, please see: ![architecture document](architecture.md)
+Cere Freeport is Cere's NFT minting and asset management solution. For an oveview of the architecture, please see: ![architecture document](./architecture.md).  Some notes about the code in this tutorial:
+
+* Most of the UI code is in `Main.js` and `Panel*.jsx` files
+* Most of the DDC and Freeport functionality is in `ations.js` file. 
 
 # Minting NFTs on Polygon with Cere Freeport
 In this tutorial, you'll learn how to connect a React frontend to Cere Freeport's smart contracts using Metamask and the Freeport SDK. You will learn how to:
@@ -398,3 +401,10 @@ export const transfer = async (env, to, nftId) => {
 
 Congratulations! You've completed the tutorial. Now you can upload an asset to Cere DDC, mint an NFT and attach them to one another using Cere Freeport.
 
+
+# References
+
+  - [Cere Freeport Github](https://github.com/Cerebellum-Network/Cere-Freeport)
+  - [Freeport Smart contract Listener Github](https://github.com/Cerebellum-Network/freeport-sc-event-listener)
+  - [DDC Node and CLI Documentation](https://cere-network.gitbook.io/cere-network/)
+  - [NFT Minting Tutorial](https://github.com/Cerebellum-Network/freeport-nft-minter-tutorial)

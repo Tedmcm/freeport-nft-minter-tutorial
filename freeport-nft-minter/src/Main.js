@@ -15,8 +15,8 @@ import PanelUpload from "./PanelUpload";
 import PanelDownload from "./PanelDownload";
 import PanelMetamaskLogin from "./PanelMetamaskLogin";
 import PanelMint from "./PanelMint";
-import PanelTransfer from "./Transfer";
-import TokenListView from "./Lister";
+import PanelTransfer from "./PanelTransfer";
+import TokenListView from "./PanelLister";
 
 import { importProvider } from "@cere/freeport-sdk";
 import {
