@@ -187,3 +187,6 @@ a:hover {
   text-decoration: underline;
 }
 
+.card {
+  height: 400px;
+}
