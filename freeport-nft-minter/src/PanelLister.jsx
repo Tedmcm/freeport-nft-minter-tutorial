@@ -9,7 +9,7 @@ import {
 } from "./util";
 import Button from 'react-bootstrap/Button';
 
-const API_GATEWAY = "https://api.freeport.dev.cere.network";
+import { API_GATEWAY } from "./config";
 
 const TokenList =  ({env}) => {
 	const [ownedList, setOwnedList] = useState(null);
@@ -58,7 +58,7 @@ export const listTokens = async (env) => {
     const accounts = await utilGetAccounts(ethereum);
     const minter = await utilGetOwnerAddress(ethereum, accounts);
 
-    const url = listOwnedUrl(env)(minter);
+    const url = listOwnedUrl(API_GATEWAY)(minter);
     const resp = await httpGet(url);
     return resp.data;
 };

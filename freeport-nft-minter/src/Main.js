@@ -175,7 +175,7 @@ const Main = (props) => {
           <PanelAttach/>
         </Col>
         <Col>
-          <PanelTransfer env={API_ENV}/>
+          <PanelTransfer walletAddress={walletAddress} env={API_ENV}/>
         </Col>
         <Col>
           <PanelTokenList/>

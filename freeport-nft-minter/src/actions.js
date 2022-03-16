@@ -1,8 +1,7 @@
+import { CONTRACT_ENV } from "./config"; 
 import { importProvider, getFreeportAddress, createFreeport, getNFTAttachmentAddress, createNFTAttachment } from "@cere/freeport-sdk";
 import { get as httpGet, post as httpPost } from "axios";
 import bs58 from 'bs58';
-
-const API_ENV = "stage";
 
 export const connectWallet = async () => {
   // Check if window.ethereum is enabled in your browser (i.e., metamask is installed)
@@ -99,13 +98,12 @@ export const mintNFT = async (quantity, metadata) => {
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
-  const env = API_ENV;
+  const env = CONTRACT_ENV;
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getFreeportAddress(provider, env);
-  console.log("CA", contractAddress)
+  console.log("FP contract address:", contractAddress)
   // Create an instance of the Freeport contract using the provider and Freeport contract address
   const contract = createFreeport( { provider, contractAddress } );
-  console.log("freeport contract ", contract);
   try {
     // Call the issue() function from the Freeport smart contract.
     const tx = await contract.issue(quantity, utilStr2ByteArr(metadata));
@@ -123,7 +121,7 @@ export const attachNftToCid = async (nftId, cid) => {
   // Create a new provider, which is an abstraction of a connection to the Ethereum network.
   const provider = importProvider();
   // Select 'dev', 'stage', or 'prod' environment to determine which smart contract to use. Default is 'prod'.
-  const env = API_ENV;
+  const env = CONTRACT_ENV;
   // Get the appropriate Freeport contract address, based on environment selected above.
   const contractAddress = await getNFTAttachmentAddress(provider, env);
   // Create an instance of the Freeport contract using the provider and Freeport contract address
@@ -142,6 +140,32 @@ export const attachNftToCid = async (nftId, cid) => {
     // If something goes wrong, catch that error. 
   } catch (error) { return { success: false, status: "Something went wrong: " + error.message }; }
 };
+
+
+
+export const transferNFT = async (from, to, nftId) => {
+    const provider = importProvider();
+    const env = CONTRACT_ENV;
+    const contractAddress = await getFreeportAddress(provider, env);
+
+    // Contract object
+    const contract = createFreeport({
+        provider,
+        contractAddress
+    });
+
+    // // find from address
+    // const accounts = await provider.provider.request({ method: 'eth_requestAccounts' });
+    // const from = accounts[0];
+
+
+    const tx = await contract.safeTransferFrom(from, to, nftId, 1, [0]);
+    const receipt = await tx.wait();
+    console.log(receipt);
+
+    return tx;
+};
+
 
 // Helper functions
 const sleepFor = async (x) => new Promise((resolve, _) => {

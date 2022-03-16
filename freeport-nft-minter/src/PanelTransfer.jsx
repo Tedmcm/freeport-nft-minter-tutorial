@@ -5,24 +5,31 @@ import {
     getFreeportAddress
 } from "@cere/freeport-sdk";
 
+import { transferNFT } from "./actions";
+
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-const API_ENV = "dev";
-
-const TransferView = ({ env }) => {
+const PanelTransfer = ({ env, walletAddress }) => {
   const [tx, setTx] = useState(null);
   const [to, setTo] = useState(null);
   const [nftId, setNftId] = useState(null);
+  const [error, setError] = useState(null);
 
   const onToInput = e => setTo(e.target.value);
   const onNftIdInput = e => setNftId(e.target.value);
 
   const submit = async () => {
-  	const tx = await transfer(env, to, nftId);
-  	setTx(tx.hash);
+    try {
+      setError(null);
+      setTx(null);
+    	const tx = await transferNFT(walletAddress, to, nftId);
+    	setTx(tx.hash);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -31,6 +38,7 @@ const TransferView = ({ env }) => {
       		<Card.Title> Transfer Token </Card.Title>
       	</Card.Header>
       	<Card.Body>
+
 	      <Row>
 	        <Col> To Wallet: </Col>
 	        <Col> 
@@ -47,6 +55,7 @@ const TransferView = ({ env }) => {
    	    </Card.Body>
         <Card.Footer>
     	  { tx ? <TxLink url={makeScanUrl(tx)}/> : null}
+        { error ? <div> {(error)} </div> : null}
    	    </Card.Footer>
    	  </Card>
   );
@@ -61,30 +70,6 @@ const TxLink = ({url}) => (
 );
 
 
-
-
-export const transfer = async (env, to, nftId) => {
-    const provider = importProvider();
-    const contractAddress = await getFreeportAddress(provider, env);
-
-    // Contract object
-    const contract = createFreeport({
-        provider,
-        contractAddress
-    });
-
-    // find from address
-    const accounts = await provider.provider.request({ method: 'eth_requestAccounts' });
-    const from = accounts[0];
-
-
-    const tx = await contract.safeTransferFrom(from, to, nftId, 1, [0]);
-    const receipt = await tx.wait();
-    console.log(receipt);
-
-    return tx;
-};
-
 const makeScanUrl = (tx) => `https://mumbai.polygonscan.com/tx/${tx}`;
 
-export default TransferView;
+export default PanelTransfer;
