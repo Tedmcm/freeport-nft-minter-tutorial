@@ -247,16 +247,20 @@ export default Main;
 const PanelAttach = () => {
   const [nftId, setNftId] = useState(null);
   const [cid, setCid] = useState(null);
-  const [attachOutput, setAttachOutput] = useState("Attachment transaction link:");
+  const [attachOutput, setAttachOutput] = useState("Enter NFT ID and Content ID");
   const [status, setStatus] = useState("");
+  const [tx, setTx] = useState(null);
 
   const onAttachPressed = async () => {
     setAttachOutput("Attaching content to NFT...");
+    setTx(null);
     const { status, tx } = await attachNftToCid(nftId, cid);
     setStatus(status);
-    setAttachOutput(<a href={"https://mumbai.polygonscan.com/tx/"+tx}>Transaction Link</a>)
+    setAttachOutput(null);
+    setTx(tx);
   };
 
+  const txUrl = (tx) => "https://mumbai.polygonscan.com/tx/"+tx;
 
   return (
       <Card bg="secondary" border="secondary" text="light">
@@ -291,7 +295,8 @@ const PanelAttach = () => {
         {attachOutput && <Container>
             <Row> 
               <Col >
-                 {attachOutput}
+                 { tx && <TxLink url={txUrl(tx)}/>}
+                 { attachOutput }
               </Col>
             </Row>  
             </Container>
@@ -300,3 +305,11 @@ const PanelAttach = () => {
       </Card>
   );
 };
+
+const TxLink = ({url}) => (
+  <a
+    href={url}
+    target={"txscanner"}>
+    Transaction Link
+  </a>
+);
