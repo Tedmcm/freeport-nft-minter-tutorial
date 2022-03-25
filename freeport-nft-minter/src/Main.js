@@ -1,5 +1,5 @@
 import { React, useEffect, useState, useContext, Fragment } from "react";
-import { connectWallet, getCurrentWalletConnected, mintNFT, upload2DDC, downloadFromDDC, attachNftToCid } from "./actions.js";
+import { connectWallet, getCurrentWalletConnected, upload2DDC, downloadFromDDC } from "./actions.js";
 
 import { get as httpGet, post as httpPost } from "axios";
 import LocalStorage from "local-storage";
@@ -14,30 +14,28 @@ import Col from 'react-bootstrap/Col';
 import PanelUpload from "./PanelUpload";
 import PanelDownload from "./PanelDownload";
 import PanelMetamaskLogin from "./PanelMetamaskLogin";
-import PanelMint from "./PanelMint";
-import PanelTransfer from "./PanelTransfer";
-import TokenListView from "./PanelLister";
+
 
 import { importProvider } from "@cere/freeport-sdk";
+
 import {
-    utilProvider2Ethereum,
-    utilGetAccounts,
-    utilGetOwnerAddress,
-    utilGetEncPubKey,
-    utilSign,
+  utilProvider2Ethereum,
+  utilGetAccounts,
+  utilGetOwnerAddress,
+  utilGetEncPubKey,
+  utilSign,
 } from "./util";
 
-import {API_ENV, DDC_GATEWAY, API_GATEWAY} from "./config";
+import { API_ENV, DDC_GATEWAY, API_GATEWAY } from "./config";
 
 const Main = (props) => {
   // State variables - Connecting wallet
   const [walletAddress, setWalletAddress] = useState("");
+
   // State variables - Mint NFT
-  const [nftId, setNftId] = useState(null);
   const [status, setStatus] = useState("");
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  const [listOutput, setListOutput] = useState("");
 
   const [sessionToken, setSessionToken] = useState(null);
   const [minter, setMinter] = useState(null);
@@ -47,15 +45,15 @@ const Main = (props) => {
   function addWalletListener() {
     // Check if metamask is installed 
     if (window.ethereum) {
-        // Listen for state changes in the metamask wallet such as:
-        window.ethereum.on("accountsChanged", (accounts) => {
-          // If there is at least one account, update the state variables 'walletAddress' and 'status'
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-            setStatus("Follow the steps below.");
+      // Listen for state changes in the metamask wallet such as:
+      window.ethereum.on("accountsChanged", (accounts) => {
+        // If there is at least one account, update the state variables 'walletAddress' and 'status'
+        if (accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+          setStatus("Follow the steps below.");
           // If metamask is installed but there are no accounts, then it must not be connected.
-          } else { setStatus("Connect to Metamask using the top right button."); }
-        });
+        } else { setStatus("Connect to Metamask using the top right button."); }
+      });
       // If metamask is not installed, then ask them to install it. 
     } else { setStatus("Please install metamask and come back"); }
   };
@@ -69,9 +67,9 @@ const Main = (props) => {
 
   useEffect(async () => {
     // The 'callback' side-effect logic
-    const {address, status} = await getCurrentWalletConnected();
+    const { address, status } = await getCurrentWalletConnected();
     setWalletAddress(address)
-    setStatus(status); 
+    setStatus(status);
     addWalletListener();
     // The 'dependencies' array
   }, []);
@@ -112,7 +110,7 @@ const Main = (props) => {
 
   // read from local storage
   useEffect(() => {
-    
+
     const minter = LocalStorage.get('minter');
     const minterEncryptionKey = LocalStorage.get('minterEncryptionKey');
     const sessionToken = LocalStorage.get('sessionToken');
@@ -122,76 +120,44 @@ const Main = (props) => {
     setSessionToken(sessionToken);
   })
 
-  const PanelTokenList= () => (
-    <Card bg="secondary" border="secondary" text="light">
-      <Card.Header >
-        <Card.Title style={{color: "white"}}>List</Card.Title>
-        <Card.Subtitle className="mb-2">List my tokens</Card.Subtitle>
-      </Card.Header >
-      <Card.Body>
-        <TokenListView env={API_ENV}/>
-      </Card.Body>
-      <Card.Footer>
-      {listOutput && <Container>
-          <Row> 
-            <Col >
-               {listOutput}
-            </Col>
-          </Row>  
-          </Container>
-      }
-      </Card.Footer>
-    </Card>      
-  );
 
   const PanelAuthenticated = () => (
     <div>
-      <h1 style={{color:"white"}}> Create an NFT with Cere Freeport and DDC </h1>
+      <h1 style={{ color: "white" }}> Upload and download your files into Cere DDC </h1>
       <Container fluid="md" bg="dark">
         <Row>
-          <Col className="col-10"/>
+          <Col className="col-10" />
           <Col>
-            <MetamaskLogout address={minter} logout={onLogoutPressed}/>
+            <MetamaskLogout address={minter} logout={onLogoutPressed} />
           </Col>
         </Row>
-        <Row  lg={2} md={2} className="g-4">
-        <Col >
-          <PanelUpload 
-            minter={minter} 
-            sessionToken={sessionToken} 
-            minterEncryptionKey={minterEncryptionKey}/>
-        </Col>
-        <Col>
-          <PanelDownload
-            provider={provider}
-            minter={minter}
-            sessionToken={sessionToken} 
-          />
-        </Col>
-        <Col>
-          <PanelMint/>
-        </Col>
-        <Col>
-          <PanelAttach/>
-        </Col>
-        <Col>
-          <PanelTransfer walletAddress={walletAddress} env={API_ENV}/>
-        </Col>
-        <Col>
-          <PanelTokenList/>
-        </Col>
-      </Row>
+        <Row lg={2} md={2} className="g-4">
+          <Col >
+            <PanelUpload
+              minter={minter}
+              sessionToken={sessionToken}
+              minterEncryptionKey={minterEncryptionKey} />
+          </Col>
+          <Col>
+            <PanelDownload
+              provider={provider}
+              minter={minter}
+              sessionToken={sessionToken}
+            />
+          </Col>
+
+        </Row>
       </Container>
     </div>
   );
 
   const WalletConnectPanel = () => (
-    <div style={{float: "right"}}>
-      <span style={{color:"white", float: "right"}}> Using {API_ENV} environment </span>
+    <div style={{ float: "right" }}>
+      <span style={{ color: "white", float: "right" }}> Using {API_ENV} environment </span>
       <Button variant="secondary" onClick={connectWalletPressed}>
-        {walletAddress.length > 0 ? 
-          ("Connected: " + String(walletAddress).substring(0, 6) + "..." + String(walletAddress).substring(38)) 
-          : 
+        {walletAddress.length > 0 ?
+          ("Connected: " + String(walletAddress).substring(0, 6) + "..." + String(walletAddress).substring(38))
+          :
           (<span>Connect Wallet</span>)
         }
       </Button>
@@ -199,27 +165,27 @@ const Main = (props) => {
   );
 
   const MainPanel = () => (
-    <div style={{backgroundColor:"black"}}>
-      <Stack style={{color:"white"}}>
-        <WalletConnectPanel/>
-        { sessionToken 
-          ? 
-            PanelAuthenticated()
-          : 
-            PanelMetamaskLogin({url: DDC_GATEWAY, login: onLoginPressed})
+    <div style={{ backgroundColor: "black" }}>
+      <Stack style={{ color: "white" }}>
+        <WalletConnectPanel />
+        {sessionToken
+          ?
+          PanelAuthenticated()
+          :
+          PanelMetamaskLogin({ url: DDC_GATEWAY, login: onLoginPressed })
         }
       </Stack>
     </div>
   );
 
-  return <MainPanel/>;
+  return <MainPanel />;
 };
 
 
-const MetamaskLogout = ({logout, address}) => (
-    <Container>
-      <Button variant="outline-secondary" onClick={logout}> Logout </Button>
-    </Container>
+const MetamaskLogout = ({ logout, address }) => (
+  <Container>
+    <Button variant="outline-secondary" onClick={logout}> Logout </Button>
+  </Container>
 );
 
 // Authorize
@@ -227,7 +193,7 @@ const authorize = async (baseUrl, provider, minter, encryptionPublicKey, nonce) 
   const msgToSign = `${minter}${encryptionPublicKey}${nonce}`;
   const signature = await utilSign(provider, minter, msgToSign);
   const authUrl = `${baseUrl}/auth/v1/${minter}`;
-  const result = await httpPost(authUrl, {encryptionPublicKey, signature});
+  const result = await httpPost(authUrl, { encryptionPublicKey, signature });
   console.log("Auth result", result.data);
   const token = result.data.accessToken;
   return token;
@@ -244,69 +210,10 @@ const getNonce = async (minter, baseUrl) => {
 export default Main;
 
 
-const PanelAttach = () => {
-  const [nftId, setNftId] = useState(null);
-  const [cid, setCid] = useState(null);
-  const [attachOutput, setAttachOutput] = useState("Enter NFT ID and Content ID");
-  const [status, setStatus] = useState("");
-  const [tx, setTx] = useState(null);
+const txUrl = (tx) => "https://mumbai.polygonscan.com/tx/" + tx;
 
-  const onAttachPressed = async () => {
-    setAttachOutput("Attaching content to NFT...");
-    setTx(null);
-    const { status, tx } = await attachNftToCid(nftId, cid);
-    setStatus(status);
-    setAttachOutput(null);
-    setTx(tx);
-  };
 
-  const txUrl = (tx) => "https://mumbai.polygonscan.com/tx/"+tx;
-
-  return (
-      <Card bg="secondary" border="secondary" text="light">
-        <Card.Header >
-          <Card.Title style={{color: "white"}}>Attach</Card.Title>
-          <Card.Subtitle className="mb-2">Attach NFT to CID</Card.Subtitle>
-        </Card.Header >
-        <Card.Body>
-          <Container>
-            <Row>
-              <Col> NFT ID:
-              </Col>
-              <Col>
-                <input type="text" placeholder="NFT ID" onChange={(event) => setNftId(event.target.value)}/>
-              </Col>
-            </Row>
-            <Row>
-              <Col> Content ID:
-              </Col>
-              <Col>
-                <input type="text" placeholder="Content ID" onChange={(event) => setCid(event.target.value)}/>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Button id="actionButton" onClick={onAttachPressed}> Attach</Button>      
-              </Col>
-            </Row>
-          </Container>    
-        </Card.Body>
-        <Card.Footer>
-        {attachOutput && <Container>
-            <Row> 
-              <Col >
-                 { tx && <TxLink url={txUrl(tx)}/>}
-                 { attachOutput }
-              </Col>
-            </Row>  
-            </Container>
-        }
-        </Card.Footer>
-      </Card>
-  );
-};
-
-const TxLink = ({url}) => (
+const TxLink = ({ url }) => (
   <a
     href={url}
     target={"txscanner"}>
