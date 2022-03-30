@@ -34,19 +34,19 @@ export const getCurrentWalletConnected = async () => {
 };
 
 
-export const upload2DDC = async (gatewayUrl, sessionToken, minter, minterEncryptionKey, data, preview, title, description) => {
+export const upload2DDC = async (gatewayUrl, sessionToken, downer, downerEncryptionKey, data, preview, title, description) => {
   const uploadData = {
-    minter, // Owner address
+    downer, // Owner address
     file: data, // binary file
     preview,
-    minterEncryptionKey, // Minter encryption key
+    downerEncryptionKey, // Minter encryption key
     title, // Asset title
     description //Descriptive text
   };
   const uploadUrl = `${gatewayUrl}/assets/v2`;
   const httpRes = await upload(uploadUrl, uploadData, sessionToken);
   const contentId = httpRes.data;
-  const previewUrl = `${gatewayUrl}/assets/v2/${minter}/${contentId}/preview`;
+  const previewUrl = `${gatewayUrl}/assets/v2/${downer}/${contentId}/preview`;
   return { contentId, previewUrl, status: "Upload successful" };
 };
 
@@ -71,19 +71,19 @@ const upload = async (url, data, sessionToken) => {
 };
 
 
-export const downloadFromDDC = async (gatewayUrl, sessionToken, provider, minter, contentId) => {
+export const downloadFromDDC = async (gatewayUrl, sessionToken, provider, downer, contentId) => {
   const signer = provider.getSigner();
   // Wait one second.
   await sleepFor(1);
   // Create the signature 
-  const signature = await signer.signMessage(`${minter}${contentId}${minter}`);
+  const signature = await signer.signMessage(`${downer}${contentId}${downer}`);
   // Construct a set of key/value pairs representing the fields required by the Cere DDC API. 
   const headers = {
     'X-DDC-Signature': signature,
-    'X-DDC-Address': minter,
+    'X-DDC-Address': downer,
     Authorization: `Bearer ${sessionToken}`
   };
-  const downloadUrl = `${gatewayUrl}/assets/v2/${minter}/${contentId}/content`;
+  const downloadUrl = `${gatewayUrl}/assets/v2/${downer}/${contentId}/content`;
   const results = await httpGet(downloadUrl, {
     responseType: 'blob',
     headers

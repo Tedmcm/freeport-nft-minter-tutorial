@@ -14,7 +14,7 @@ export const utilGetEncPubKey = async (ethereum, accounts) => ethereum
 
 export const utilGetOwnerAddress = async (ethereum, accounts) => accounts[0];
 export const utilGetAccounts = async (ethereum) =>
-	ethereum.request({ method: 'eth_requestAccounts' });
+    ethereum.request({ method: 'eth_requestAccounts' });
 
 export const utilStr2ByteArr = (str) => {
     const arr = [];
@@ -25,36 +25,36 @@ export const utilStr2ByteArr = (str) => {
 }
 
 const sleep1 = async () => new Promise((resolve, _) => {
-	setTimeout(() => resolve(), 1000);
+    setTimeout(() => resolve(), 1000);
 })
 
-export const utilSignUpload = async (provider, minter, data) =>
-	utilSign(provider, minter, confirmUploadMsg(data));
+export const utilSignUpload = async (provider, downer, data) =>
+    utilSign(provider, downer, confirmUploadMsg(data));
 
-export const utilSignDownload = async (provider, minter, cid, address) =>
-	utilSign(provider, minter, confirmDownloadMsg(minter, cid, address));
+export const utilSignDownload = async (provider, downer, cid, address) =>
+    utilSign(provider, downer, confirmDownloadMsg(downer, cid, address));
 
-export const utilSign = async (provider, minter, text) => {
-	const signer = provider.getSigner();
+export const utilSign = async (provider, downer, text) => {
+    const signer = provider.getSigner();
 
-	// For some reason, metamask throws error on the
-	// signature part. Not sure if it's an issue on our
-	// side or a metamask issue
-	await sleep1();
+    // For some reason, metamask throws error on the
+    // signature part. Not sure if it's an issue on our
+    // side or a metamask issue
+    await sleep1();
 
-	const signature = await signer.signMessage(text);
-	return signature;
+    const signature = await signer.signMessage(text);
+    return signature;
 };
 
 const confirmUploadMsg = (data) =>
     `Confirm asset upload
 Title: ${data.title}
 Description: ${data.description}
-Address: ${data.minter}`;
+Address: ${data.downer}`;
 
-const confirmDownloadMsg = (minter, cid, address) =>
+const confirmDownloadMsg = (downer, cid, address) =>
     `Confirm identity:
-Minter: ${minter}
+Downer: ${downer}
 CID: ${cid}
 Address: ${address}`;
 

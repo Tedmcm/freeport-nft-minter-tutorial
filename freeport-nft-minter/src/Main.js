@@ -32,14 +32,14 @@ const Main = (props) => {
   // State variables - Connecting wallet
   const [walletAddress, setWalletAddress] = useState("");
 
-  // State variables - Mint NFT
+  // State variables 
   const [status, setStatus] = useState("");
   const [previewUrl, setPreviewUrl] = useState(null);
 
 
   const [sessionToken, setSessionToken] = useState(null);
-  const [minter, setMinter] = useState(null);
-  const [minterEncryptionKey, setMinterEncryptionKey] = useState(null);
+  const [downer, setDowner] = useState(null);
+  const [downerEncryptionKey, setDownerEncryptionKey] = useState(null);
   const [provider, setProvider] = useState(null);
 
   function addWalletListener() {
@@ -80,43 +80,43 @@ const Main = (props) => {
     const provider = importProvider();
     const ethereum = utilProvider2Ethereum(provider);
     const accounts = await utilGetAccounts(ethereum);
-    const minter = await utilGetOwnerAddress(ethereum, accounts);
-    const minterEncryptionKey = await utilGetEncPubKey(ethereum, accounts);
+    const downer = await utilGetOwnerAddress(ethereum, accounts);
+    const downerEncryptionKey = await utilGetEncPubKey(ethereum, accounts);
 
     const url = DDC_GATEWAY;
 
-    const nonce = await getNonce(minter, url);
-    const sessionToken = await authorize(url, provider, minter, minterEncryptionKey, nonce);
+    const nonce = await getNonce(downer, url);
+    const sessionToken = await authorize(url, provider, downer, downerEncryptionKey, nonce);
 
-    LocalStorage.set('minter', minter);
-    LocalStorage.set('minterEncryptionKey', minterEncryptionKey);
+    LocalStorage.set('downer', downer);
+    LocalStorage.set('downerEncryptionKey', downerEncryptionKey);
     LocalStorage.set('sessionToken', sessionToken);
 
-    setMinter(minter);
-    setMinterEncryptionKey(minterEncryptionKey);
+    setDowner(downer);
+    setDownerEncryptionKey(downerEncryptionKey);
     setProvider(provider);
     setSessionToken(sessionToken);
   };
 
   const onLogoutPressed = () => {
-    setMinter(null);
-    setMinterEncryptionKey(null);
+    setDowner(null);
+    setDownerEncryptionKey(null);
     setProvider(null);
     setSessionToken(null);
-    LocalStorage.set('minter', null);
-    LocalStorage.set('minterEncryptionKey', null);
+    LocalStorage.set('downer', null);
+    LocalStorage.set('downerEncryptionKey', null);
     LocalStorage.set('sessionToken', null);
   };
 
   // read from local storage
   useEffect(() => {
 
-    const minter = LocalStorage.get('minter');
-    const minterEncryptionKey = LocalStorage.get('minterEncryptionKey');
+    const downer = LocalStorage.get('downer');
+    const downerEncryptionKey = LocalStorage.get('downerEncryptionKey');
     const sessionToken = LocalStorage.get('sessionToken');
 
-    setMinter(minter);
-    setMinterEncryptionKey(minterEncryptionKey);
+    setDowner(downer);
+    setDownerEncryptionKey(downerEncryptionKey);
     setSessionToken(sessionToken);
   })
 
@@ -128,24 +128,23 @@ const Main = (props) => {
         <Row>
           <Col className="col-10" />
           <Col>
-            <MetamaskLogout address={minter} logout={onLogoutPressed} />
+            <MetamaskLogout address={downer} logout={onLogoutPressed} />
           </Col>
         </Row>
         <Row lg={2} md={2} className="g-4">
           <Col >
             <PanelUpload
-              minter={minter}
+              downer={downer}
               sessionToken={sessionToken}
-              minterEncryptionKey={minterEncryptionKey} />
+              downerEncryptionKey={downerEncryptionKey} />
           </Col>
           <Col>
             <PanelDownload
               provider={provider}
-              minter={minter}
+              downer={downer}
               sessionToken={sessionToken}
             />
           </Col>
-
         </Row>
       </Container>
     </div>
@@ -189,10 +188,10 @@ const MetamaskLogout = ({ logout, address }) => (
 );
 
 // Authorize
-const authorize = async (baseUrl, provider, minter, encryptionPublicKey, nonce) => {
-  const msgToSign = `${minter}${encryptionPublicKey}${nonce}`;
-  const signature = await utilSign(provider, minter, msgToSign);
-  const authUrl = `${baseUrl}/auth/v1/${minter}`;
+const authorize = async (baseUrl, provider, downer, encryptionPublicKey, nonce) => {
+  const msgToSign = `${downer}${encryptionPublicKey}${nonce}`;
+  const signature = await utilSign(provider, downer, msgToSign);
+  const authUrl = `${baseUrl}/auth/v1/${downer}`;
   const result = await httpPost(authUrl, { encryptionPublicKey, signature });
   console.log("Auth result", result.data);
   const token = result.data.accessToken;
@@ -200,8 +199,8 @@ const authorize = async (baseUrl, provider, minter, encryptionPublicKey, nonce) 
 };
 
 // Get NONCE for session
-const getNonce = async (minter, baseUrl) => {
-  const result = await httpGet(`${baseUrl}/auth/v1/${minter}/nonce`);
+const getNonce = async (downer, baseUrl) => {
+  const result = await httpGet(`${baseUrl}/auth/v1/${downer}/nonce`);
   console.log("NONCE is", result.data);
   return result.data;
 };
